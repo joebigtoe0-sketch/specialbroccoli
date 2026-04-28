@@ -25,12 +25,28 @@ app.get("/api/status", async () => ({
   holdersCount: runtime.snapshot.items.length,
 }));
 
-app.get("/api/holders", async () => ({
-  source: runtime.snapshot.source,
-  fetchedAtUnix: runtime.snapshot.fetchedAtUnix,
-  error: runtime.snapshot.error,
-  items: runtime.snapshot.items,
-}));
+app.get("/api/holders", async () => {
+  const now = Math.floor(Date.now() / 1000);
+  const items = runtime.snapshot.items;
+  const activeHolders = items.length;
+  const avgHoldDays =
+    activeHolders > 0
+      ? items.reduce((sum, row) => sum + Math.max(0, now - row.heldSinceUnix), 0) / activeHolders / 86400
+      : 0;
+  const nextDistributionUnix = Math.ceil(now / 1800) * 1800;
+  return {
+    source: runtime.snapshot.source,
+    fetchedAtUnix: runtime.snapshot.fetchedAtUnix,
+    error: runtime.snapshot.error,
+    stats: {
+      activeHolders,
+      avgHoldDays,
+      totalDistributedSol: 0,
+      nextDistributionUnix,
+    },
+    items,
+  };
+});
 
 await registerAdminRoutes(app);
 await startPoller();

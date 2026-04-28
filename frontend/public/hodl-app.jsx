@@ -3,9 +3,12 @@ const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
 const DEFAULT_HOLDERS = JSON.parse(document.getElementById('mock-holders-json').textContent);
 const API_URL = localStorage.getItem('HODL_API_URL') || window.HODL_API_URL || '';
-const TOTAL_DISTRIBUTED_SOL = 342.81;
-const AVG_HOLD_DAYS = 11.4;
-const NEXT_DISTRIBUTION_UNIX = Math.floor(Date.now() / 1000) + 6 * 3600;
+const DEFAULT_STATS = {
+  totalDistributedSol: 0,
+  avgHoldDays: 0,
+  activeHolders: DEFAULT_HOLDERS.length,
+  nextDistributionUnix: Math.ceil(Math.floor(Date.now() / 1000) / 1800) * 1800,
+};
 
 /* ---------- formatting helpers ---------- */
 function shortenAddr(a) { return a.slice(0, 4) + '…' + a.slice(-4); }
@@ -254,12 +257,12 @@ function useCountdown(targetUnix) {
   return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
 
-function StatsBar({ activeHolders }) {
-  const cd = useCountdown(NEXT_DISTRIBUTION_UNIX);
+function StatsBar({ stats }) {
+  const cd = useCountdown(stats.nextDistributionUnix);
   const tiles = [
-    { label:'TOTAL DISTRIBUTED', value: TOTAL_DISTRIBUTED_SOL.toFixed(2) + ' SOL', accent:'var(--ice-300)' },
-    { label:'ACTIVE HOLDERS',    value: activeHolders.toLocaleString(),              accent:'var(--ice-100)' },
-    { label:'AVG HOLD TIME',     value: AVG_HOLD_DAYS.toFixed(1) + ' DAYS',         accent:'var(--ice-100)' },
+    { label:'TOTAL DISTRIBUTED', value: stats.totalDistributedSol.toFixed(2) + ' SOL', accent:'var(--ice-300)' },
+    { label:'ACTIVE HOLDERS',    value: stats.activeHolders.toLocaleString(),          accent:'var(--ice-100)' },
+    { label:'AVG HOLD TIME',     value: stats.avgHoldDays.toFixed(1) + ' DAYS',        accent:'var(--ice-100)' },
     { label:'NEXT DISTRIBUTION', value: cd,                                          accent:'var(--prism-yellow)', mono:true },
   ];
   return (
@@ -534,7 +537,7 @@ function Mechanic() {
 /* ---------- leaderboard ---------- */
 const PAGE_SIZE = 25;
 
-function Leaderboard({ holders }) {
+function Leaderboard({ holders, nextDistributionUnix }) {
   const [sort, setSort] = useState({ key: 'weightPpm', dir: 'desc' });
   const [q, setQ] = useState('');
   const [page, setPage] = useState(0);
@@ -581,6 +584,13 @@ function Leaderboard({ holders }) {
     ? (sort.dir === 'desc' ? <I.ChevronDown/> : <I.ChevronUp/>)
     : null;
 
+  const nextCycleText = useMemo(() => {
+    const secs = Math.max(0, nextDistributionUnix - NOW);
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    return `CYCLE IN ${h}h ${m}m`;
+  }, [nextDistributionUnix, NOW]);
+
   return (
     <section id="leaderboard" style={{ padding:'48px 0 96px' }}>
       <div className="container">
@@ -594,7 +604,7 @@ function Leaderboard({ holders }) {
           </div>
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
             <span className="pill">{holders.length.toLocaleString()} HOLDERS</span>
-            <span className="pill"><span style={{color:'var(--win)'}}>●</span> CYCLE 14 IN 5h 59m</span>
+            <span className="pill"><span style={{color:'var(--win)'}}>●</span> {nextCycleText}</span>
           </div>
         </div>
 
@@ -776,6 +786,7 @@ function Footer() {
 /* ---------- app ---------- */
 function App() {
   const [holders, setHolders] = useState(DEFAULT_HOLDERS);
+  const [stats, setStats] = useState(DEFAULT_STATS);
   useEffect(() => {
     if (!API_URL) return;
     const load = async () => {
@@ -783,9 +794,13 @@ function App() {
         const res = await fetch(`${API_URL}/api/holders`);
         if (!res.ok) return;
         const data = await res.json();
-        if (Array.isArray(data.items) && data.items.length > 0) {
-          setHolders(data.items);
-        }
+        if (Array.isArray(data.items)) setHolders(data.items);
+        if (data.stats) setStats({
+          totalDistributedSol: Number(data.stats.totalDistributedSol || 0),
+          avgHoldDays: Number(data.stats.avgHoldDays || 0),
+          activeHolders: Number(data.stats.activeHolders || data.items?.length || 0),
+          nextDistributionUnix: Number(data.stats.nextDistributionUnix || DEFAULT_STATS.nextDistributionUnix),
+        });
       } catch (e) {
         // Keep the bundled mock set on network/API failure.
       }
@@ -810,12 +825,12 @@ function App() {
     <div id="top" style={{ position:'relative', zIndex:1 }}>
       <Nav onNav={onNav} />
       <Hero onNav={onNav} />
-      <StatsBar activeHolders={holders.length} />
+      <StatsBar stats={stats} />
       <ThreeSteps />
       <hr className="divider" />
       <Mechanic />
       <hr className="divider" />
-      <Leaderboard holders={holders} />
+      <Leaderboard holders={holders} nextDistributionUnix={stats.nextDistributionUnix} />
       <Footer />
     </div>
   );

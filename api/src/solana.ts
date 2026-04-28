@@ -62,6 +62,17 @@ type ProgramAccount = {
   };
 };
 
+function stableHoldWindowSeconds(address: string): bigint {
+  let hash = 0;
+  for (let i = 0; i < address.length; i++) {
+    hash = (hash * 31 + address.charCodeAt(i)) >>> 0;
+  }
+  const minDays = 2;
+  const maxExtraDays = 58;
+  const days = minDays + (hash % maxExtraDays);
+  return BigInt(days * 24 * 60 * 60);
+}
+
 export async function fetchChainHolders(mint: string): Promise<HolderRow[]> {
   const supply = await fetchTokenSupplyRaw(mint);
   if (supply <= 0n) return [];
@@ -92,8 +103,8 @@ export async function fetchChainHolders(mint: string): Promise<HolderRow[]> {
   let totalWeight = 0n;
   const now = Math.floor(Date.now() / 1000);
   const items = Array.from(byOwner.entries()).map(([address, amount]) => {
-    // This is mock-weighting for the prototype: amount x random hold window.
-    const heldFor = BigInt(7 * 24 * 60 * 60 + Math.floor(Math.random() * 7 * 24 * 60 * 60));
+    // Use deterministic pseudo-hold window to keep leaderboard stable between polls.
+    const heldFor = stableHoldWindowSeconds(address);
     const weight = amount * heldFor;
     totalWeight += weight;
     return { address, amount, weight, heldSinceUnix: now - Number(heldFor) };
