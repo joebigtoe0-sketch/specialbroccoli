@@ -1,8 +1,12 @@
 /* global React, ReactDOM */
 const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
+function normalizeApiUrl(url) {
+  return String(url || '').trim().replace(/\/+$/, '');
+}
+
 const DEFAULT_HOLDERS = JSON.parse(document.getElementById('mock-holders-json').textContent);
-const API_URL = localStorage.getItem('HODL_API_URL') || window.HODL_API_URL || '';
+const API_URL = normalizeApiUrl(localStorage.getItem('HODL_API_URL') || window.HODL_API_URL || '');
 const HAS_API_URL = !!String(API_URL).trim();
 const INITIAL_HOLDERS = HAS_API_URL ? [] : DEFAULT_HOLDERS;
 const DEFAULT_STATS = {

@@ -22,6 +22,11 @@ function AdminBoard() {
     normalizeApiUrl(localStorage.getItem("HODL_API_URL") || DEFAULT_API_URL),
   );
 
+  useEffect(() => {
+    if (!apiUrl) return;
+    localStorage.setItem("HODL_API_URL", normalizeApiUrl(apiUrl));
+  }, [apiUrl]);
+
   const refresh = useCallback(async () => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
     const base = normalizeApiUrl(apiUrl);
@@ -68,25 +73,10 @@ function AdminBoard() {
 
   return (
     <section className="container admin">
-      <a href="/HODL.html" className="back">
+      <a href="/" className="back">
         Back to site
       </a>
       <h1>HODL Admin Board</h1>
-      <div className="card">
-        <label>API URL</label>
-        <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} />
-        <button
-          className="btn"
-          onClick={() => {
-            const normalized = normalizeApiUrl(apiUrl);
-            setApiUrl(normalized);
-            localStorage.setItem("HODL_API_URL", normalized);
-            setMsg("API URL saved");
-          }}
-        >
-          Save API URL
-        </button>
-      </div>
       {!token ? (
         <div className="card">
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" />
