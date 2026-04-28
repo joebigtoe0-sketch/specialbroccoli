@@ -9,24 +9,77 @@ type JsonRpcResult<T> = {
 
 const SPL_TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 const TOKEN_2022_PROGRAM = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb";
+const RPC_MAX_ATTEMPTS = 8;
+const RPC_BASE_DELAY_MS = 1200;
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryAfterMs(res: Response): number | null {
+  const ra = res.headers.get("retry-after");
+  if (!ra) return null;
+  const sec = Number(ra);
+  if (Number.isFinite(sec) && sec > 0) return Math.min(60_000, sec * 1000);
+  return null;
+}
+
+function isRetryableHttp(status: number): boolean {
+  return status === 429 || status === 408 || status === 502 || status === 503 || status === 504;
+}
+
+function isRetryableJsonRpcError(err: { code?: number; message?: string } | undefined): boolean {
+  if (!err?.message && err?.code == null) return false;
+  const m = (err.message ?? "").toLowerCase();
+  if (m.includes("rate") || m.includes("429") || m.includes("throttle") || m.includes("too many")) return true;
+  const c = err.code;
+  return c === -32005 || c === -32001 || c === -32429 || c === -32603;
+}
 
 async function rpcRequest<T>(method: string, params: unknown[]): Promise<T> {
-  const res = await fetch(config.rpcUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-  });
-  if (!res.ok) {
-    throw new Error(`RPC HTTP ${res.status}`);
+  let lastErr = "RPC request failed";
+  for (let attempt = 0; attempt < RPC_MAX_ATTEMPTS; attempt++) {
+    const res = await fetch(config.rpcUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+    });
+
+    if (!res.ok) {
+      lastErr = `RPC HTTP ${res.status}`;
+      if (isRetryableHttp(res.status) && attempt < RPC_MAX_ATTEMPTS - 1) {
+        const wait =
+          retryAfterMs(res) ??
+          Math.min(90_000, RPC_BASE_DELAY_MS * 2 ** attempt + Math.floor(Math.random() * 800));
+        await sleep(wait);
+        continue;
+      }
+      throw new Error(lastErr);
+    }
+
+    const json = (await res.json()) as JsonRpcResult<T>;
+    if (json.error) {
+      lastErr = json.error.message || "RPC error";
+      if (isRetryableJsonRpcError(json.error) && attempt < RPC_MAX_ATTEMPTS - 1) {
+        const wait = Math.min(90_000, RPC_BASE_DELAY_MS * 2 ** attempt + Math.floor(Math.random() * 800));
+        await sleep(wait);
+        continue;
+      }
+      throw new Error(lastErr);
+    }
+
+    if (json.result === undefined) {
+      lastErr = "RPC empty result";
+      if (attempt < RPC_MAX_ATTEMPTS - 1) {
+        const wait = Math.min(30_000, RPC_BASE_DELAY_MS * 2 ** attempt);
+        await sleep(wait);
+        continue;
+      }
+      throw new Error(lastErr);
+    }
+    return json.result;
   }
-  const json = (await res.json()) as JsonRpcResult<T>;
-  if (json.error) {
-    throw new Error(json.error.message || "RPC error");
-  }
-  if (json.result === undefined) {
-    throw new Error("RPC empty result");
-  }
-  return json.result;
+  throw new Error(lastErr);
 }
 
 async function fetchTokenSupplyRaw(mint: string): Promise<bigint> {
