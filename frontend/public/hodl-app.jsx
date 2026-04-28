@@ -147,9 +147,9 @@ function DiamondMark({ size = 32 }) {
 }
 
 /* ---------- nav ---------- */
-function NavBracket({ label, href, onClick }) {
+function NavBracket({ label, href, onClick, target, rel }) {
   return (
-    <a href={href} className="nav-bracket mono" onClick={onClick}>
+    <a href={href} className="nav-bracket mono" onClick={onClick} target={target} rel={rel}>
       <span className="br">[</span>{label}<span className="br">]</span>
     </a>
   );
@@ -178,7 +178,7 @@ function Nav({ onNav, buyUrl }) {
           <NavBracket label="HOW"        href="#how"        onClick={(e)=>{e.preventDefault(); onNav('how');}} />
           <NavBracket label="MECHANIC"   href="#mechanic"   onClick={(e)=>{e.preventDefault(); onNav('mechanic');}} />
           <NavBracket label="LEADERBOARD"href="#leaderboard"onClick={(e)=>{e.preventDefault(); onNav('leaderboard');}} />
-          <NavBracket label="BUY"        href={buyUrl} />
+          <NavBracket label="BUY" href={buyUrl} target="_blank" rel="noopener" />
         </div>
         <a href={buyUrl} target="_blank" rel="noopener" className="btn btn-prism">
           BUY ON PRINTR <I.Arrow size={12}/>
