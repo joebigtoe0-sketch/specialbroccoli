@@ -220,7 +220,7 @@ function Hero({ onNav, buyUrl }) {
           </div>
           <div style={{ display:'flex', gap:20, flexWrap:'wrap', marginTop:36 }}>
             <span className="pill"><span style={{color:'var(--win)'}}>●</span> CONTRACT VERIFIED</span>
-            <span className="pill"><span style={{color:'var(--ice-300)'}}>◆</span> METEORA POOL LIVE</span>
+            <span className="pill"><span style={{color:'var(--ice-300)'}}>◆</span> POOL LIVE</span>
             <span className="pill"><span style={{color:'var(--prism-yellow)'}}>★</span> CYCLE 14 PENDING</span>
           </div>
         </div>
@@ -402,8 +402,8 @@ function CodeBlock({ filename, code }) {
 const STEP_CODE = [
   {
     num:'01',
-    title:'CLAIM FEES FROM THE METEORA POOL',
-    blurb:'Every cycle, the dev script claims accumulated swap fees from the staked Meteora DLMM position.',
+    title:'CLAIM FEES FROM THE POOL',
+    blurb:'Every cycle, the dev script claims accumulated swap fees from the active liquidity pool position.',
     file:'claim.ts',
     code:`import DLMM from '@meteora-ag/dlmm';
 import { Connection, Keypair, PublicKey } from '@solana/web3.js';
@@ -795,7 +795,7 @@ function Footer({ buyUrl }) {
 function App() {
   const [holders, setHolders] = useState(INITIAL_HOLDERS);
   const [stats, setStats] = useState(DEFAULT_STATS);
-  const [tokenMint, setTokenMint] = useState('');
+  const [tokenMint, setTokenMint] = useState(() => (localStorage.getItem('HODL_TOKEN_MINT') || '').trim());
   useEffect(() => {
     if (!API_URL) return;
     const load = async () => {
@@ -804,7 +804,21 @@ function App() {
         if (!res.ok) return;
         const data = await res.json();
         if (Array.isArray(data.items)) setHolders(data.items);
-        if (typeof data.tokenMint === 'string') setTokenMint(data.tokenMint);
+        if (typeof data.tokenMint === 'string') {
+          const mint = data.tokenMint.trim();
+          setTokenMint(mint);
+          if (mint) localStorage.setItem('HODL_TOKEN_MINT', mint);
+        } else {
+          const statusRes = await fetch(`${API_URL}/api/status`);
+          if (statusRes.ok) {
+            const statusData = await statusRes.json();
+            if (typeof statusData.tokenMint === 'string') {
+              const mint = statusData.tokenMint.trim();
+              setTokenMint(mint);
+              if (mint) localStorage.setItem('HODL_TOKEN_MINT', mint);
+            }
+          }
+        }
         if (data.stats) setStats({
           totalDistributedSol: Number(data.stats.totalDistributedSol || 0),
           avgHoldDays: Number(data.stats.avgHoldDays || 0),

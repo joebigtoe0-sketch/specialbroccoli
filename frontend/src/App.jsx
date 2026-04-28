@@ -69,7 +69,12 @@ function AdminBoard() {
     });
     const data = await res.json();
     if (!res.ok) setMsg(data.error || data.message || "Request failed");
-    else setMsg("Success");
+    else {
+      setMsg("Success");
+      if (path === "/api/admin/config") {
+        localStorage.setItem("HODL_TOKEN_MINT", (body.tokenMint || "").trim());
+      }
+    }
     await refresh();
   };
 
