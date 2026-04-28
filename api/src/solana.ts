@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import { config } from "./config.js";
+import { config, getHolderRpcUrl } from "./config.js";
 import type { HolderRow } from "./types.js";
 
 type JsonRpcResult<T> = {
@@ -36,10 +36,16 @@ function isRetryableJsonRpcError(err: { code?: number; message?: string } | unde
   return c === -32005 || c === -32001 || c === -32429 || c === -32603;
 }
 
+function strictAboveTwoTenthsPercent(balance: bigint, supply: bigint): boolean {
+  if (supply <= 0n) return false;
+  return balance * 1000n > supply * 2n;
+}
+
 async function rpcRequest<T>(method: string, params: unknown[]): Promise<T> {
+  const rpcUrl = getHolderRpcUrl();
   let lastErr = "RPC request failed";
   for (let attempt = 0; attempt < RPC_MAX_ATTEMPTS; attempt++) {
-    const res = await fetch(config.rpcUrl, {
+    const res = await fetch(rpcUrl, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
@@ -161,7 +167,7 @@ export async function fetchChainHolders(mint: string): Promise<HolderRow[]> {
     const weight = amount * heldFor;
     totalWeight += weight;
     return { address, amount, weight, heldSinceUnix: now - Number(heldFor) };
-  });
+  }).filter((item) => strictAboveTwoTenthsPercent(item.amount, supply));
 
   const ranked = items
     .map((item) => {

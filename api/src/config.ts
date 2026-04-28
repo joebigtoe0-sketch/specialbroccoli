@@ -21,3 +21,9 @@ export const config = {
   sessionTtlMs: Number(process.env.SESSION_TTL_MS ?? 7 * 24 * 60 * 60 * 1000),
   mockHoldersPath: process.env.MOCK_HOLDERS_PATH?.trim() || path.join(repoRoot, "mock-holders.json"),
 };
+
+export function getHolderRpcUrl(): string {
+  const holderRpc = process.env.HOLDER_RPC_URL?.trim();
+  if (holderRpc) return holderRpc;
+  return config.rpcUrl;
+}

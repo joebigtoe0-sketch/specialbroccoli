@@ -27,6 +27,9 @@ export async function runHolderFetch(): Promise<void> {
     runtime.lastSuccessUnix = runtime.snapshot.fetchedAtUnix;
   } catch (error) {
     runtime.snapshot.error = error instanceof Error ? error.message : String(error);
+    runtime.snapshot.source = config.mockHolders ? "mock" : "chain";
+    // Keep last successful items instead of wiping snapshot on transient RPC failures.
+    runtime.snapshot.fetchedAtUnix = runtime.snapshot.fetchedAtUnix ?? Math.floor(Date.now() / 1000);
   }
 }
 
