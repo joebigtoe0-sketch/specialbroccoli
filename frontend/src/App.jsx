@@ -2,6 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 
 const DEFAULT_API_URL = import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
+function normalizeApiUrl(url) {
+  return (url || "").trim().replace(/\/+$/, "");
+}
+
 function App() {
   const isAdmin = window.location.pathname === "/admin";
   if (isAdmin) return <AdminBoard />;
@@ -14,11 +18,14 @@ function AdminBoard() {
   const [mint, setMint] = useState("");
   const [status, setStatus] = useState(null);
   const [msg, setMsg] = useState("");
-  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem("HODL_API_URL") || DEFAULT_API_URL);
+  const [apiUrl, setApiUrl] = useState(() =>
+    normalizeApiUrl(localStorage.getItem("HODL_API_URL") || DEFAULT_API_URL),
+  );
 
   const refresh = useCallback(async () => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const res = await fetch(`${apiUrl}/api/admin/status`, { headers });
+    const base = normalizeApiUrl(apiUrl);
+    const res = await fetch(`${base}/api/admin/status`, { headers });
     const data = await res.json();
     if (res.ok) {
       setStatus(data);
@@ -29,7 +36,8 @@ function AdminBoard() {
   }, [token, apiUrl]);
 
   const login = async () => {
-    const res = await fetch(`${apiUrl}/api/admin/login`, {
+    const base = normalizeApiUrl(apiUrl);
+    const res = await fetch(`${base}/api/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
@@ -46,7 +54,8 @@ function AdminBoard() {
   }, [token, refresh]);
 
   const postAdmin = async (path, body = {}) => {
-    const res = await fetch(`${apiUrl}${path}`, {
+    const base = normalizeApiUrl(apiUrl);
+    const res = await fetch(`${base}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(body),
@@ -69,7 +78,9 @@ function AdminBoard() {
         <button
           className="btn"
           onClick={() => {
-            localStorage.setItem("HODL_API_URL", apiUrl.trim());
+            const normalized = normalizeApiUrl(apiUrl);
+            setApiUrl(normalized);
+            localStorage.setItem("HODL_API_URL", normalized);
             setMsg("API URL saved");
           }}
         >
