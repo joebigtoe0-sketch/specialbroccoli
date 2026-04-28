@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+api/node_modules/
+frontend/node_modules/
+
+# Build outputs
+api/dist/
+frontend/dist/
+
+# Environment files
+.env
+.env.*
+api/.env
+frontend/.env
+!.env.example
+!api/.env.example
+!frontend/.env.example
+
+# Logs and temp
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

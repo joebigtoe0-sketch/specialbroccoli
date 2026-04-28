@@ -1,0 +1,12 @@
+{
+  "name": "hodl",
+  "private": true,
+  "scripts": {
+    "dev:api": "npm --prefix api run dev",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:api": "npm --prefix api run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "start:api": "npm --prefix api run start",
+    "start:frontend": "npm --prefix frontend run preview"
+  }
+}
