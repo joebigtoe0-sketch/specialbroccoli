@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>$HODL — Proof of Patience</title>
+<link rel="icon" href="public/diamond-fist.jpg" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ink-900:#000000;
+    --ink-800:#0A0A0F;
+    --ink-700:#12121A;
+    --ink-600:#1C1C26;
+    --ink-500:#2A2A38;
+    --ice-50:#F5FBFF;
+    --ice-100:#DDEFFF;
+    --ice-300:#A8D4FF;
+    --ice-500:#6BB4FF;
+    --ice-700:#3D7FCC;
+    --prism-pink:#FF4DA6;
+    --prism-orange:#FFA64D;
+    --prism-yellow:#FFE14D;
+    --prism-green:#4DFFA6;
+    --prism-blue:#4DA6FF;
+    --prism-purple:#A64DFF;
+    --win:#4DFFA6;
+    --loss:#FF5577;
+  }
+  *,*::before,*::after { box-sizing:border-box; }
+  html,body { margin:0; padding:0; background:var(--ink-900); color:var(--ice-100); }
+  body {
+    font-family:'Inter',sans-serif;
+    font-size:15px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .mono { font-family:'Geist Mono',ui-monospace,Menlo,monospace; }
+  .tnum { font-variant-numeric:tabular-nums; }
+
+  /* faint grid overlay */
+  body::before {
+    content:'';
+    position:fixed; inset:0;
+    background-image:
+      linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    pointer-events:none;
+    z-index:0;
+    mask-image: radial-gradient(ellipse 100% 80% at 50% 30%, black 30%, transparent 80%);
+  }
+
+  .gradient-prism {
+    background: linear-gradient(90deg,#FF4DA6 0%,#FFA64D 20%,#FFE14D 40%,#4DFFA6 60%,#4DA6FF 80%,#A64DFF 100%);
+  }
+  .gradient-ice {
+    background: linear-gradient(135deg,#F5FBFF 0%,#A8D4FF 50%,#6BB4FF 100%);
+  }
+  .text-prism {
+    background: linear-gradient(90deg,#FF4DA6,#FFA64D,#FFE14D,#4DFFA6,#4DA6FF,#A64DFF);
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent;
+  }
+  .text-ice {
+    background: linear-gradient(135deg,#F5FBFF 0%,#A8D4FF 50%,#6BB4FF 100%);
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent;
+  }
+
+  ::selection { background: rgba(107,180,255,0.35); color:var(--ice-50); }
+
+  /* card */
+  .card {
+    background:var(--ink-800);
+    border:1px solid var(--ink-600);
+    border-radius:18px;
+    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  }
+  .card:hover {
+    border-color: rgba(107,180,255,0.4);
+    box-shadow: 0 0 24px -4px rgba(107,180,255,0.25);
+  }
+
+  /* buttons */
+  .btn {
+    display:inline-flex; align-items:center; gap:8px;
+    padding:11px 18px;
+    font-family:'Geist Mono',monospace;
+    font-size:13px; font-weight:600;
+    letter-spacing:0.04em;
+    text-transform:uppercase;
+    border-radius:10px;
+    cursor:pointer;
+    text-decoration:none;
+    transition: all .2s ease;
+    border:1px solid transparent;
+    white-space:nowrap;
+  }
+  .btn-primary {
+    background:var(--ice-100);
+    color:var(--ink-900);
+    border-color:var(--ice-100);
+  }
+  .btn-primary:hover {
+    background:var(--ice-50);
+    box-shadow: 0 0 30px -6px rgba(168,212,255,0.6);
+    transform: translateY(-1px);
+  }
+  .btn-outline {
+    background:transparent;
+    color:var(--ice-100);
+    border-color:var(--ink-500);
+  }
+  .btn-outline:hover {
+    border-color:var(--ice-500);
+    color:var(--ice-50);
+  }
+  .btn-prism {
+    position:relative;
+    background:var(--ink-900);
+    color:var(--ice-100);
+    border:1px solid var(--ink-500);
+    overflow:hidden;
+  }
+  .btn-prism::before {
+    content:'';
+    position:absolute;
+    inset:-1px;
+    border-radius:10px;
+    padding:1px;
+    background: linear-gradient(90deg,#FF4DA6,#FFA64D,#FFE14D,#4DFFA6,#4DA6FF,#A64DFF);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity:0;
+    transition: opacity .25s ease;
+    pointer-events:none;
+  }
+  .btn-prism:hover::before, .btn-prism:focus-visible::before { opacity:1; }
+  .btn-prism:hover { color:var(--ice-50); }
+
+  /* nav */
+  .nav-bracket {
+    display:inline-flex; align-items:center; gap:0;
+    color:var(--ice-100);
+    font-family:'Geist Mono',monospace;
+    font-size:12px; font-weight:500;
+    letter-spacing:0.06em;
+    padding:6px 8px;
+    cursor:pointer;
+    text-decoration:none;
+    transition: color .2s ease;
+  }
+  .nav-bracket .br { color:var(--ink-500); transition: color .2s ease; }
+  .nav-bracket:hover { color:var(--ice-50); }
+  .nav-bracket:hover .br { color:var(--ice-500); }
+
+  /* hero */
+  .hero-h1 {
+    font-family:'Geist Mono',monospace;
+    font-weight:700;
+    font-size: clamp(40px, 7.4vw, 84px);
+    line-height: 0.96;
+    letter-spacing: -0.025em;
+    color:#fff;
+    margin:0;
+  }
+
+  /* fist halo */
+  @keyframes float {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-10px); }
+  }
+  .fist-wrap { animation: float 6s ease-in-out infinite; }
+  .fist-halo {
+    position:absolute; inset:-16%;
+    border-radius:50%;
+    background: radial-gradient(circle at 50% 45%, rgba(168,212,255,0.6), rgba(107,180,255,0.25) 40%, transparent 70%);
+    filter: blur(8px);
+    z-index:0;
+  }
+  .fist-prism-ring {
+    position:absolute; inset:-8%;
+    border-radius:50%;
+    padding:1px;
+    background: conic-gradient(from 0deg,#FF4DA6,#FFA64D,#FFE14D,#4DFFA6,#4DA6FF,#A64DFF,#FF4DA6);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0.30;
+    z-index:1;
+    animation: spin 24s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* shimmer for hero text glow underlay */
+  .hero-glow {
+    position:absolute; left:50%; top:50%;
+    transform: translate(-50%,-50%);
+    width:80%; height:60%;
+    background: radial-gradient(ellipse at center, rgba(107,180,255,0.18), transparent 70%);
+    filter: blur(40px);
+    z-index:-1;
+    pointer-events:none;
+  }
+
+  /* dotted connector */
+  .dotted-connector {
+    position:absolute;
+    top:50%; left:0; right:0;
+    height:1px;
+    background-image: linear-gradient(to right, var(--ink-500) 50%, transparent 0%);
+    background-size: 12px 1px;
+    background-repeat: repeat-x;
+    transform-origin: left center;
+    z-index:0;
+  }
+
+  /* fade-up entrance */
+  .fade-up { opacity:0; transform: translateY(8px); transition: opacity .7s ease, transform .7s ease; }
+  .fade-up.in { opacity:1; transform: translateY(0); }
+
+  /* code */
+  .code-block {
+    background: #0d1117;
+    border:1px solid var(--ink-600);
+    border-radius:12px;
+    overflow:hidden;
+    font-family:'Geist Mono',monospace;
+    font-size:13px;
+    line-height:1.6;
+  }
+  .code-head {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 14px;
+    background:#0a0d12;
+    border-bottom:1px solid var(--ink-600);
+    font-size:12px;
+    color:var(--ice-300);
+  }
+  .code-body {
+    padding:16px 18px;
+    overflow-x:auto;
+    color:#c9d1d9;
+  }
+  .code-body pre { margin:0; white-space:pre; }
+  /* token colors (github dark default-ish) */
+  .tok-k { color:#ff7b72; } /* keyword */
+  .tok-s { color:#a5d6ff; } /* string */
+  .tok-c { color:#8b949e; font-style:italic; } /* comment */
+  .tok-n { color:#79c0ff; } /* number */
+  .tok-f { color:#d2a8ff; } /* function */
+  .tok-t { color:#ffa657; } /* type */
+  .tok-v { color:#79c0ff; } /* variable highlight */
+
+  /* leaderboard */
+  table.lb { width:100%; border-collapse:separate; border-spacing:0; }
+  table.lb th {
+    text-align:left;
+    font-family:'Geist Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-500);
+    font-weight:600;
+    padding:14px 16px;
+    border-bottom:1px solid var(--ink-600);
+    background:var(--ink-800);
+    position:sticky; top:0;
+    cursor:pointer;
+    user-select:none;
+    transition: color .15s;
+  }
+  table.lb th:hover { color:var(--ice-300); }
+  table.lb th.sorted { color:var(--ice-100); }
+  table.lb td {
+    padding:14px 16px;
+    border-bottom:1px solid var(--ink-700);
+    font-family:'Geist Mono',monospace;
+    font-size:13px;
+    font-variant-numeric: tabular-nums;
+    vertical-align:middle;
+  }
+  table.lb tbody tr { transition: background .15s; }
+  table.lb tbody tr:hover { background: rgba(107,180,255,0.04); }
+  .rank-cell { width:64px; }
+  .rank-num { font-size:18px; color:var(--ice-100); font-weight:600; }
+  .rank-top { color: #fff; }
+  .top3 td:first-child { position:relative; }
+  .top3 td:first-child::before {
+    content:'';
+    position:absolute;
+    left:0; top:8px; bottom:8px;
+    width:2px;
+    background: linear-gradient(180deg,#FF4DA6,#FFA64D,#FFE14D,#4DFFA6,#4DA6FF,#A64DFF);
+    border-radius:2px;
+  }
+  .top3 td { box-shadow: inset 0 0 0 0 transparent; }
+  .top3:hover td { background: rgba(107,180,255,0.05); }
+
+  .weight-bar {
+    display:inline-block;
+    height:4px;
+    border-radius:2px;
+    margin-left:10px;
+    vertical-align: middle;
+    background: linear-gradient(135deg,#F5FBFF,#A8D4FF,#6BB4FF);
+    box-shadow: 0 0 8px -2px rgba(107,180,255,0.6);
+  }
+
+  .pill {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:4px 10px;
+    border:1px solid var(--ink-600);
+    border-radius:999px;
+    font-family:'Geist Mono',monospace;
+    font-size:11px;
+    color:var(--ice-300);
+    letter-spacing:0.04em;
+  }
+
+  .copy-toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+    background:var(--ink-700);
+    border:1px solid var(--ice-500);
+    color:var(--ice-50);
+    padding:8px 16px;
+    border-radius:8px;
+    font-family:'Geist Mono',monospace;
+    font-size:12px;
+    z-index:100;
+    box-shadow: 0 0 20px -4px rgba(107,180,255,0.4);
+  }
+
+  /* search input */
+  .search-input {
+    width:100%;
+    background:var(--ink-800);
+    border:1px solid var(--ink-600);
+    border-radius:10px;
+    padding:11px 14px 11px 38px;
+    color:var(--ice-100);
+    font-family:'Geist Mono',monospace;
+    font-size:13px;
+    outline:none;
+    transition: border-color .2s;
+  }
+  .search-input:focus { border-color:var(--ice-500); box-shadow: 0 0 0 3px rgba(107,180,255,0.12); }
+  .search-input::placeholder { color:var(--ink-500); }
+
+  /* small util */
+  .container { max-width:1180px; margin:0 auto; padding:0 24px; }
+  .section-eyebrow {
+    display:flex; align-items:center; gap:10px;
+    font-family:'Geist Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.08em;
+    color:var(--ice-300);
+    text-transform:uppercase;
+  }
+  .section-title {
+    font-family:'Geist Mono',monospace;
+    font-weight:600;
+    font-size: clamp(28px, 4vw, 44px);
+    letter-spacing: -0.02em;
+    color:#fff;
+    margin: 8px 0 6px;
+    line-height:1.05;
+  }
+  .section-sub {
+    color: rgba(221,239,255,0.6);
+    max-width: 56ch;
+    margin: 0;
+    font-size:15px;
+  }
+
+  hr.divider {
+    border:0; height:1px;
+    background:linear-gradient(to right, transparent, var(--ink-500), transparent);
+    margin:0;
+  }
+
+  /* mobile */
+  @media (max-width: 860px) {
+    .hide-md { display:none !important; }
+  }
+
+  /* leaderboard mobile cards */
+  .lb-mobile-card {
+    background: var(--ink-800);
+    border:1px solid var(--ink-600);
+    border-radius:14px;
+    padding:14px 16px;
+    margin-bottom:10px;
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="application/json" id="mock-holders-json">[{"rank":1,"address":"RY7TFq4nk6eqUpTXYEvqLskjWVNnGAzAGcXYq8L9TZWj","heldTokens":9933690,"heldSinceUnix":1773620078,"weightPpm":75190,"earnedSol":25.7759},{"rank":2,"address":"LQ2zxyQnPHHP7f9WbgKa9arh9o4iMzJ7zEV9w51ENc1z","heldTokens":9645346,"heldSinceUnix":1773705377,"weightPpm":71346,"earnedSol":24.4581},{"rank":3,"address":"cXSHLxHDt9j1qHb3i2kZmRk7iFS98u9EmqhmfFnCyQ7E","heldTokens":9925476,"heldSinceUnix":1773838955,"weightPpm":70741,"earnedSol":24.2507},{"rank":4,"address":"k96i2JFhPXxSfzJtYiewmJ8jXwubTHu29T3FxiwDbBU1","heldTokens":8953497,"heldSinceUnix":1773957797,"weightPpm":61664,"earnedSol":21.139},{"rank":5,"address":"ikfEBVFKYxaWx9KWKrV7uhFNQUX5dq2KA8sEg6wjhYdX","heldTokens":11083239,"heldSinceUnix":1774647237,"weightPpm":60901,"earnedSol":20.8775},{"rank":6,"address":"eePWep3nAgq6rdAe4GaWsgpFG42mymzfcCyKkuGmayj3","heldTokens":11480144,"heldSinceUnix":1775100728,"weightPpm":52568,"earnedSol":18.0208},{"rank":7,"address":"pHPtbEYJyL8iozZfBoQMtrgJc993jCoUei73ZjrLPzHn","heldTokens":11908734,"heldSinceUnix":1775417725,"weightPpm":46906,"earnedSol":16.0798},{"rank":8,"address":"MG3EBhaSrETj1xvhrz12sEgcqUzRgW788h1eEnNNB9y5","heldTokens":7620552,"heldSinceUnix":1774322246,"weightPpm":46875,"earnedSol":16.0692},{"rank":9,"address":"gDz94jdhygn6Tk3VaWrv4yt9ycx6CFVFnhiDPuz6JpdQ","heldTokens":11448405,"heldSinceUnix":1775358394,"weightPpm":46465,"earnedSol":15.9287},{"rank":10,"address":"ddvnNYuTzEWVkyDq4dABUmuKZpq8YtipzNKUAH7Ne7hW","heldTokens":10119681,"heldSinceUnix":1775182032,"weightPpm":44676,"earnedSol":15.3154},{"rank":11,"address":"GvxfezMCmY65isemTk89NWGD33mMUSqPYsGbAXCUGzRm","heldTokens":9759141,"heldSinceUnix":1775325047,"weightPpm":40266,"earnedSol":13.8036},{"rank":12,"address":"J4tJd2iAdwezyBF8d6oigTTPzsxyAdsUCqRJmUDpswgc","heldTokens":11023410,"heldSinceUnix":1775707119,"weightPpm":36977,"earnedSol":12.6761},{"rank":13,"address":"oPDG2HLtxCsaLK8y6voSiJ7W7FchVDEhtphqQ98YezRk","heldTokens":7895805,"heldSinceUnix":1775284922,"weightPpm":33218,"earnedSol":11.3875},{"rank":14,"address":"3DYX8dyHe8Dc4zh9Hiek4AvMvhmJLRhPRvspJz939DqQ","heldTokens":9514357,"heldSinceUnix":1775932567,"weightPpm":27583,"earnedSol":9.4557},{"rank":15,"address":"MhHvtZfkbH9E6LSnepHhRMjXkgGoxotAbWh1S4qEPyfc","heldTokens":6324996,"heldSinceUnix":1775264355,"weightPpm":26872,"earnedSol":9.212},{"rank":16,"address":"LaTRhQ6nj2xssRHc8QZRJPXTauaQq18fDcYRdHc4AKRw","heldTokens":4613408,"heldSinceUnix":1775249763,"weightPpm":19736,"earnedSol":6.7657},{"rank":17,"address":"xLj98mQdfL7A8nEqsRR7uehjxcTd8mnCqftsbNN2dFTa","heldTokens":8999238,"heldSinceUnix":1776309014,"weightPpm":19248,"earnedSol":6.5984},{"rank":18,"address":"jgG5xB7wg5zKtZso4nTUESatihJ88g8pj2UDtah6Y18g","heldTokens":2783042,"heldSinceUnix":1774183348,"weightPpm":17900,"earnedSol":6.1363},{"rank":19,"address":"tcLsSRL41jCziWi7MZh1gQZYVAu61mZVBySEFngcLSA8","heldTokens":4947856,"heldSinceUnix":1775639879,"weightPpm":17269,"earnedSol":5.92},{"rank":20,"address":"CQEJjxYB8qi2RkLUYdKxC37QGWRwtu5asMPTWuoGd93w","heldTokens":3825108,"heldSinceUnix":1775268697,"weightPpm":16218,"earnedSol":5.5597},{"rank":21,"address":"TwFdcKDZuixhHaAJmwfWvBo3qHaViP5C5NyXzZAn3qhA","heldTokens":7511512,"heldSinceUnix":1776373955,"weightPpm":15081,"earnedSol":5.1699},{"rank":22,"address":"W9DdzAgtcQcQkYFau1e7j8hvFrEuE8jTT9y8LjuzKsYc","heldTokens":5682048,"heldSinceUnix":1776093853,"weightPpm":14622,"earnedSol":5.0126},{"rank":23,"address":"TPjLjSLbRtvdX2AjFHCK4QLBtWJhvboTqhydLYKWPWAN","heldTokens":3845021,"heldSinceUnix":1775558057,"weightPpm":14055,"earnedSol":4.8182},{"rank":24,"address":"iJExm3sBJLvoT3nSt3h6jHGrh4pBEjBPymSWiC4WfzEP","heldTokens":5224847,"heldSinceUnix":1776204777,"weightPpm":12275,"earnedSol":4.208},{"rank":25,"address":"a7H85wAuVe6soG5kcy62kJkF8QDoZDWj6Vo9ywurZYRV","heldTokens":1731097,"heldSinceUnix":1774068535,"weightPpm":11535,"earnedSol":3.9543},{"rank":26,"address":"8B2rER9KoF6B5A597XGRCG2aCz2hgYFf7bxJJScqvPsu","heldTokens":2889055,"heldSinceUnix":1775422477,"weightPpm":11352,"earnedSol":3.8916},{"rank":27,"address":"aDcJy2XjFBVxYGSkWmwFChncg4iYwtSGQS54P8eGFjDe","heldTokens":1698509,"heldSinceUnix":1774109091,"weightPpm":11179,"earnedSol":3.8323},{"rank":28,"address":"CcUDgdkxniWquTcwb8oiBgobQC5Npf6yyNABcGJpV8qC","heldTokens":2272975,"heldSinceUnix":1775292461,"weightPpm":9528,"earnedSol":3.2663},{"rank":29,"address":"JKHsnJfN53tXTuPr8RVCuJzLb64o8tieQF4LnSA5ZaL4","heldTokens":1052185,"heldSinceUnix":1773820148,"weightPpm":7539,"earnedSol":2.5844},{"rank":30,"address":"k8b11cnZYjMz46M2ihgh338A5TGy6QBeQd6F88rbRST3","heldTokens":4461287,"heldSinceUnix":1776538037,"weightPpm":7478,"earnedSol":2.5635},{"rank":31,"address":"HQC5WoySD9ykC1eesYZdXipgSDC87sexY7box6TqgzMo","heldTokens":2112863,"heldSinceUnix":1775688457,"weightPpm":7167,"earnedSol":2.4569},{"rank":32,"address":"HrawxhmmGGJrSriwW9iRMW4LdSjJJ4MUNJUfwJ4heBSr","heldTokens":7163294,"heldSinceUnix":1776908004,"weightPpm":6656,"earnedSol":2.2817},{"rank":33,"address":"HtHZeHTSqtoxduqAF6yTwUNHqfbD6Ko2sKjk2kgXLjPn","heldTokens":5426439,"heldSinceUnix":1776785051,"weightPpm":6389,"earnedSol":2.1902},{"rank":34,"address":"w2r5YttUnkcmSTxTf3vuhd5mL9gorJ2ZGLLW7JBox55b","heldTokens":1182717,"heldSinceUnix":1775169378,"weightPpm":5252,"earnedSol":1.8004},{"rank":35,"address":"T1x6dkeQadPHsBMLKYM85rjSRbgUfSvBmhJ9v8HaVbip","heldTokens":3548758,"heldSinceUnix":1776645942,"weightPpm":5175,"earnedSol":1.774},{"rank":36,"address":"PzdEnk1snm3FjvynfvePPmfQNdAjmMzQoBVcGendwUXW","heldTokens":2717836,"heldSinceUnix":1776605551,"weightPpm":4185,"earnedSol":1.4347},{"rank":37,"address":"zriugi7iD29wMGKu6ZCoCjEvz1H9oDwX7hQCUwVDavqh","heldTokens":2151127,"heldSinceUnix":1776516038,"weightPpm":3702,"earnedSol":1.2691},{"rank":38,"address":"yitmFa8ZdgTCcauvK5UrtcbLmonkLThNMBrVLQMYxNWJ","heldTokens":9554738,"heldSinceUnix":1777211710,"weightPpm":3017,"earnedSol":1.0343},{"rank":39,"address":"XQg8jEh6C52oChS2hKa61Gm2pkDRqPUt3UhDE1zNXMMF","heldTokens":330572,"heldSinceUnix":1774739068,"weightPpm":1755,"earnedSol":0.6016},{"rank":40,"address":"hePyZEpdcMVx2rq6FhsVmuTbJBn7JMwo1B3ciGcwpoC3","heldTokens":400896,"heldSinceUnix":1775250629,"weightPpm":1714,"earnedSol":0.5876},{"rank":41,"address":"d4Xm1gArBTXZVeTjkzHhKtRnK7KSDNepPSaVNvtQmhGS","heldTokens":201354,"heldSinceUnix":1773599736,"weightPpm":1532,"earnedSol":0.5252},{"rank":42,"address":"av99pym7Dnssr6gvdatmkSnEVbEAR9ogEE6pyQS87qFT","heldTokens":444684,"heldSinceUnix":1775672834,"weightPpm":1522,"earnedSol":0.5218},{"rank":43,"address":"niuN9wAUExWDUK5wMxzCrh6YtdYTzy39NXXWM9oZodWK","heldTokens":11586671,"heldSinceUnix":1777317207,"weightPpm":1191,"earnedSol":0.4083},{"rank":44,"address":"Kyqgd7sdB2WrPRaTPfA3VM2oxV9gq1NLgN8hvrhyeEin","heldTokens":10106611,"heldSinceUnix":1777313106,"weightPpm":1122,"earnedSol":0.3846},{"rank":45,"address":"5pyoAPHVquCKXGQ1eNUFbhZcEPRwEvxav2FYWxyipJZg","heldTokens":3149877,"heldSinceUnix":1777265608,"weightPpm":652,"earnedSol":0.2235},{"rank":46,"address":"aDN2S7szrVerb69xvtYBYGwpAqU42YqrgPahiizT6CS8","heldTokens":1369957,"heldSinceUnix":1777150488,"weightPpm":602,"earnedSol":0.2064},{"rank":47,"address":"QGrbws2bQu3F4rDEjVF1RMLhNGxaqdSU6m9zySVBJEYJ","heldTokens":83072,"heldSinceUnix":1774898212,"weightPpm":414,"earnedSol":0.1419},{"rank":48,"address":"Tmy3aJefUFiW2qjujYzzdn4YcFk2wSMaa2Qb597FHZRy","heldTokens":148049,"heldSinceUnix":1776300267,"weightPpm":319,"earnedSol":0.1094},{"rank":49,"address":"YGRRW3PaxN823WwrtixNYXPUprTTP7tN7gkfUygeX4JG","heldTokens":210730,"heldSinceUnix":1776865728,"weightPpm":214,"earnedSol":0.0734},{"rank":50,"address":"ZfQnTkXBK4t5ZeLAd8bNQFgLUArkrVSMndifzFnm7Uys","heldTokens":118426,"heldSinceUnix":1776716454,"weightPpm":156,"earnedSol":0.0535}]</script>
+
+<script type="text/babel" src="hodl-app.jsx"></script>
+</body>
+</html>

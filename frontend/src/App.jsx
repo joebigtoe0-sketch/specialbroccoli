@@ -1,97 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-const API_URL = import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
-
-function shortenAddr(a) {
-  return `${a.slice(0, 4)}...${a.slice(-4)}`;
-}
+const DEFAULT_API_URL = import.meta.env.VITE_API_URL || import.meta.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
 function App() {
   const isAdmin = window.location.pathname === "/admin";
   if (isAdmin) return <AdminBoard />;
-  return <LandingPage />;
-}
-
-function LandingPage() {
-  const [holders, setHolders] = useState([]);
-  const [status, setStatus] = useState(null);
-
-  useEffect(() => {
-    const load = async () => {
-      const [holdersRes, statusRes] = await Promise.all([
-        fetch(`${API_URL}/api/holders`),
-        fetch(`${API_URL}/api/status`),
-      ]);
-      const holdersData = await holdersRes.json();
-      const statusData = await statusRes.json();
-      setHolders(holdersData.items || []);
-      setStatus(statusData);
-    };
-    void load();
-    const t = setInterval(load, 15000);
-    return () => clearInterval(t);
-  }, []);
-
-  const top = useMemo(() => holders.slice(0, 50), [holders]);
-
-  return (
-    <div>
-      <nav className="nav">
-        <div className="container nav-inner">
-          <div className="brand">
-            <img src="/hodllogo.jpg" alt="HODL logo" />
-            <span>$HODL</span>
-          </div>
-          <a className="btn" href="/admin">
-            Admin Board
-          </a>
-        </div>
-      </nav>
-
-      <section className="hero container">
-        <div>
-          <h1>
-            DIAMOND HANDS
-            <br />
-            GET PAID.
-          </h1>
-          <p>Mockup v1 with live Solana holder fetching via API worker.</p>
-          <div className="pills">
-            <span className="pill">Source: {status?.source || "-"}</span>
-            <span className="pill">Holders: {status?.holdersCount || 0}</span>
-            <span className="pill">Poll: {status?.pollRunning ? "running" : "stopped"}</span>
-          </div>
-        </div>
-        <img className="hero-logo" src="/diamond-fist.jpg" alt="Diamond fist" />
-      </section>
-
-      <section className="container board">
-        <h2>Leaderboard</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Wallet</th>
-              <th>Held</th>
-              <th>Weight ppm</th>
-              <th>Earned SOL</th>
-            </tr>
-          </thead>
-          <tbody>
-            {top.map((h) => (
-              <tr key={h.address}>
-                <td>{h.rank}</td>
-                <td>{shortenAddr(h.address)}</td>
-                <td>{h.heldTokens.toLocaleString()}</td>
-                <td>{h.weightPpm.toLocaleString()}</td>
-                <td>{h.earnedSol.toFixed(4)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
-    </div>
-  );
+  return <iframe title="HODL Landing" src="/HODL.html" style={{ border: 0, width: "100vw", height: "100vh", display: "block" }} />;
 }
 
 function AdminBoard() {
@@ -100,25 +14,28 @@ function AdminBoard() {
   const [mint, setMint] = useState("");
   const [status, setStatus] = useState(null);
   const [msg, setMsg] = useState("");
+  const [apiUrl, setApiUrl] = useState(() => localStorage.getItem("HODL_API_URL") || DEFAULT_API_URL);
 
   const refresh = useCallback(async () => {
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const res = await fetch(`${API_URL}/api/admin/status`, { headers });
+    const res = await fetch(`${apiUrl}/api/admin/status`, { headers });
     const data = await res.json();
     if (res.ok) {
       setStatus(data);
       setMint(data.tokenMint || "");
+    } else {
+      setMsg(data.error || data.message || "Could not fetch admin status");
     }
-  }, [token]);
+  }, [token, apiUrl]);
 
   const login = async () => {
-    const res = await fetch(`${API_URL}/api/admin/login`, {
+    const res = await fetch(`${apiUrl}/api/admin/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ password }),
     });
     const data = await res.json();
-    if (!res.ok) return setMsg(data.error || "Login failed");
+    if (!res.ok) return setMsg(data.error || data.message || "Login failed");
     setToken(data.token);
     setMsg("Logged in");
   };
@@ -129,23 +46,36 @@ function AdminBoard() {
   }, [token, refresh]);
 
   const postAdmin = async (path, body = {}) => {
-    const res = await fetch(`${API_URL}${path}`, {
+    const res = await fetch(`${apiUrl}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) setMsg(data.error || "Request failed");
+    if (!res.ok) setMsg(data.error || data.message || "Request failed");
     else setMsg("Success");
     await refresh();
   };
 
   return (
     <section className="container admin">
-      <a href="/" className="back">
+      <a href="/HODL.html" className="back">
         Back to site
       </a>
       <h1>HODL Admin Board</h1>
+      <div className="card">
+        <label>API URL</label>
+        <input value={apiUrl} onChange={(e) => setApiUrl(e.target.value)} />
+        <button
+          className="btn"
+          onClick={() => {
+            localStorage.setItem("HODL_API_URL", apiUrl.trim());
+            setMsg("API URL saved");
+          }}
+        >
+          Save API URL
+        </button>
+      </div>
       {!token ? (
         <div className="card">
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Admin password" />
