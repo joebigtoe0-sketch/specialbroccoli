@@ -213,7 +213,7 @@ function Hero({ onNav, buyUrl, cyclePending }) {
             maxWidth:'46ch',
             marginTop:24, marginBottom:32,
           }}>
-            90% of supply staked. 100% of fees flow back to whoever holds the longest. No claiming, no gas, no cope.
+            90% of supply staked. 100% of fees flow to everyone who holds. Longer you hold, more you get in every cycle. No claiming, no gas, no cope.
           </p>
           <div style={{ display:'flex', flexWrap:'wrap', gap:12 }}>
             <a href={buyUrl} target="_blank" rel="noopener" className="btn btn-primary">BUY ON PRINTR <I.Arrow size={12}/></a>
@@ -526,7 +526,7 @@ function Mechanic() {
         <div style={{
           marginTop:32,
           display:'grid',
-          gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))',
+          gridTemplateColumns:'repeat(auto-fit, minmax(420px, 1fr))',
           gap:18,
         }}>
           {STEP_CODE.map(s => (
