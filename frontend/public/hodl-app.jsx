@@ -3,10 +3,12 @@ const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
 const DEFAULT_HOLDERS = JSON.parse(document.getElementById('mock-holders-json').textContent);
 const API_URL = localStorage.getItem('HODL_API_URL') || window.HODL_API_URL || '';
+const HAS_API_URL = !!String(API_URL).trim();
+const INITIAL_HOLDERS = HAS_API_URL ? [] : DEFAULT_HOLDERS;
 const DEFAULT_STATS = {
   totalDistributedSol: 0,
   avgHoldDays: 0,
-  activeHolders: DEFAULT_HOLDERS.length,
+  activeHolders: INITIAL_HOLDERS.length,
   nextDistributionUnix: Math.ceil(Math.floor(Date.now() / 1000) / 1800) * 1800,
 };
 
@@ -785,7 +787,7 @@ function Footer() {
 
 /* ---------- app ---------- */
 function App() {
-  const [holders, setHolders] = useState(DEFAULT_HOLDERS);
+  const [holders, setHolders] = useState(INITIAL_HOLDERS);
   const [stats, setStats] = useState(DEFAULT_STATS);
   useEffect(() => {
     if (!API_URL) return;

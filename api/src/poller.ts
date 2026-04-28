@@ -5,12 +5,22 @@ import { fetchChainHolders, loadMockHolders } from "./solana.js";
 export async function runHolderFetch(): Promise<void> {
   runtime.lastAttemptUnix = Math.floor(Date.now() / 1000);
   try {
-    const items =
-      config.mockHolders || !runtime.tokenMint ? await loadMockHolders() : await fetchChainHolders(runtime.tokenMint);
+    if (!config.mockHolders && !runtime.tokenMint) {
+      runtime.snapshot = {
+        items: [],
+        source: "chain",
+        fetchedAtUnix: Math.floor(Date.now() / 1000),
+        error: "Token mint is not set. Configure it in /admin first.",
+      };
+      return;
+    }
+
+    const useMock = config.mockHolders;
+    const items = useMock ? await loadMockHolders() : await fetchChainHolders(runtime.tokenMint);
 
     runtime.snapshot = {
       items,
-      source: config.mockHolders || !runtime.tokenMint ? "mock" : "chain",
+      source: useMock ? "mock" : "chain",
       fetchedAtUnix: Math.floor(Date.now() / 1000),
       error: null,
     };
