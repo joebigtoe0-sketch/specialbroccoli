@@ -59,6 +59,7 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
       lastError: runtime.snapshot.error,
       source: runtime.snapshot.source,
       holdersCount: runtime.snapshot.items.length,
+      blacklistAddresses: runtime.blacklistAddresses,
     };
   });
 
@@ -84,5 +85,19 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
     if (!requireAuth(req, reply)) return;
     stopPoller();
     return { ok: true, pollRunning: runtime.pollRunning };
+  });
+
+  app.post("/api/admin/blacklist", async (req, reply) => {
+    if (!requireAuth(req, reply)) return;
+    const body = (req.body ?? {}) as { addresses?: unknown };
+    if (!Array.isArray(body.addresses)) {
+      return reply.code(400).send({ error: "addresses_must_be_array" });
+    }
+    const addresses = body.addresses
+      .filter((a): a is string => typeof a === "string")
+      .map((a) => a.trim())
+      .filter(Boolean);
+    runtime.blacklistAddresses = Array.from(new Set(addresses));
+    return { ok: true, blacklistAddresses: runtime.blacklistAddresses };
   });
 }

@@ -15,6 +15,10 @@ const DEFAULT_STATS = {
   activeHolders: INITIAL_HOLDERS.length,
   nextDistributionUnix: Math.ceil(Math.floor(Date.now() / 1000) / 1800) * 1800,
 };
+function buildBuyUrl(tokenMint) {
+  if (!tokenMint) return 'https://app.printr.money/trade/';
+  return `https://app.printr.money/trade/${tokenMint}`;
+}
 
 /* ---------- formatting helpers ---------- */
 function shortenAddr(a) { return a.slice(0, 4) + '…' + a.slice(-4); }
@@ -150,7 +154,7 @@ function NavBracket({ label, href, onClick }) {
   );
 }
 
-function Nav({ onNav }) {
+function Nav({ onNav, buyUrl }) {
   return (
     <nav style={{
       position:'sticky', top:0, zIndex:50,
@@ -173,9 +177,9 @@ function Nav({ onNav }) {
           <NavBracket label="HOW"        href="#how"        onClick={(e)=>{e.preventDefault(); onNav('how');}} />
           <NavBracket label="MECHANIC"   href="#mechanic"   onClick={(e)=>{e.preventDefault(); onNav('mechanic');}} />
           <NavBracket label="LEADERBOARD"href="#leaderboard"onClick={(e)=>{e.preventDefault(); onNav('leaderboard');}} />
-          <NavBracket label="BUY"        href="https://printr.fun/" />
+          <NavBracket label="BUY"        href={buyUrl} />
         </div>
-        <a href="https://printr.fun/" target="_blank" rel="noopener" className="btn btn-prism">
+        <a href={buyUrl} target="_blank" rel="noopener" className="btn btn-prism">
           BUY ON PRINTR <I.Arrow size={12}/>
         </a>
       </div>
@@ -184,7 +188,7 @@ function Nav({ onNav }) {
 }
 
 /* ---------- hero ---------- */
-function Hero({ onNav }) {
+function Hero({ onNav, buyUrl }) {
   return (
     <section style={{ position:'relative', paddingTop:48, paddingBottom:64 }}>
       <div className="hero-glow" />
@@ -211,7 +215,7 @@ function Hero({ onNav }) {
             90% of supply staked. 100% of fees flow back to whoever holds the longest. No claiming, no gas, no cope.
           </p>
           <div style={{ display:'flex', flexWrap:'wrap', gap:12 }}>
-            <a href="https://printr.fun/" target="_blank" rel="noopener" className="btn btn-primary">BUY ON PRINTR <I.Arrow size={12}/></a>
+            <a href={buyUrl} target="_blank" rel="noopener" className="btn btn-primary">BUY ON PRINTR <I.Arrow size={12}/></a>
             <a href="#leaderboard" onClick={(e)=>{e.preventDefault(); onNav('leaderboard');}} className="btn btn-outline">VIEW LEADERBOARD</a>
           </div>
           <div style={{ display:'flex', gap:20, flexWrap:'wrap', marginTop:36 }}>
@@ -739,7 +743,7 @@ function Leaderboard({ holders, nextDistributionUnix }) {
 }
 
 /* ---------- footer ---------- */
-function Footer() {
+function Footer({ buyUrl }) {
   return (
     <footer style={{ borderTop:'1px solid var(--ink-700)', padding:'48px 0 36px', marginTop:24 }}>
       <div className="container" style={{
@@ -759,10 +763,8 @@ function Footer() {
         <div>
           <div className="mono" style={{ fontSize:11, letterSpacing:'0.08em', color:'var(--ink-500)', textTransform:'uppercase', marginBottom:12 }}>LINKS</div>
           {[
-            ['Twitter / X', 'https://x.com'],
-            ['Telegram', '#'],
-            ['PRINTR token page', 'https://printr.fun/'],
-            ['Meteora pool', '#'],
+            ['Twitter / X', 'https://x.com/Hodlonprintr'],
+            ['PRINTR token page', buyUrl],
           ].map(([l,h]) => (
             <a key={l} href={h} className="mono" style={{
               display:'block', color:'var(--ice-100)', fontSize:13, textDecoration:'none',
@@ -793,6 +795,7 @@ function Footer() {
 function App() {
   const [holders, setHolders] = useState(INITIAL_HOLDERS);
   const [stats, setStats] = useState(DEFAULT_STATS);
+  const [tokenMint, setTokenMint] = useState('');
   useEffect(() => {
     if (!API_URL) return;
     const load = async () => {
@@ -801,6 +804,7 @@ function App() {
         if (!res.ok) return;
         const data = await res.json();
         if (Array.isArray(data.items)) setHolders(data.items);
+        if (typeof data.tokenMint === 'string') setTokenMint(data.tokenMint);
         if (data.stats) setStats({
           totalDistributedSol: Number(data.stats.totalDistributedSol || 0),
           avgHoldDays: Number(data.stats.avgHoldDays || 0),
@@ -827,17 +831,18 @@ function App() {
       window.scrollTo({ top: y, behavior: 'smooth' });
     }
   };
+  const buyUrl = buildBuyUrl(tokenMint);
   return (
     <div id="top" style={{ position:'relative', zIndex:1 }}>
-      <Nav onNav={onNav} />
-      <Hero onNav={onNav} />
+      <Nav onNav={onNav} buyUrl={buyUrl} />
+      <Hero onNav={onNav} buyUrl={buyUrl} />
       <StatsBar stats={stats} />
       <ThreeSteps />
       <hr className="divider" />
       <Mechanic />
       <hr className="divider" />
       <Leaderboard holders={holders} nextDistributionUnix={stats.nextDistributionUnix} />
-      <Footer />
+      <Footer buyUrl={buyUrl} />
     </div>
   );
 }

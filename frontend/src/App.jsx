@@ -18,6 +18,7 @@ function AdminBoard() {
   const [mint, setMint] = useState("");
   const [status, setStatus] = useState(null);
   const [msg, setMsg] = useState("");
+  const [blacklistText, setBlacklistText] = useState("");
   const [apiUrl, setApiUrl] = useState(() =>
     normalizeApiUrl(localStorage.getItem("HODL_API_URL") || DEFAULT_API_URL),
   );
@@ -35,6 +36,7 @@ function AdminBoard() {
     if (res.ok) {
       setStatus(data);
       setMint(data.tokenMint || "");
+      setBlacklistText((data.blacklistAddresses || []).join("\n"));
     } else {
       setMsg(data.error || data.message || "Could not fetch admin status");
     }
@@ -99,6 +101,35 @@ function AdminBoard() {
               Stop Fetching
             </button>
           </div>
+          <label style={{ display: "block", marginTop: 16 }}>Blacklist addresses (one per line)</label>
+          <textarea
+            value={blacklistText}
+            onChange={(e) => setBlacklistText(e.target.value)}
+            rows={7}
+            style={{
+              width: "100%",
+              marginTop: 8,
+              marginBottom: 10,
+              background: "#000",
+              border: "1px solid #2a2a38",
+              color: "#ddefff",
+              borderRadius: 8,
+              padding: 10,
+            }}
+          />
+          <button
+            className="btn"
+            onClick={() =>
+              postAdmin("/api/admin/blacklist", {
+                addresses: blacklistText
+                  .split(/\r?\n|,/)
+                  .map((v) => v.trim())
+                  .filter(Boolean),
+              })
+            }
+          >
+            Save Blacklist
+          </button>
           <pre>{JSON.stringify(status, null, 2)}</pre>
         </div>
       )}

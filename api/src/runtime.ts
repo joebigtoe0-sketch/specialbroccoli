@@ -13,4 +13,5 @@ export const runtime = {
   } as HolderSnapshot,
   lastAttemptUnix: null as number | null,
   lastSuccessUnix: null as number | null,
+  blacklistAddresses: [] as string[],
 };

@@ -27,7 +27,10 @@ app.get("/api/status", async () => ({
 
 app.get("/api/holders", async () => {
   const now = Math.floor(Date.now() / 1000);
-  const items = runtime.snapshot.items;
+  const blacklist = new Set(runtime.blacklistAddresses.map((a) => a.toLowerCase()));
+  const items = runtime.snapshot.items
+    .filter((row) => !blacklist.has(row.address.toLowerCase()))
+    .map((row, idx) => ({ ...row, rank: idx + 1 }));
   const activeHolders = items.length;
   const avgHoldDays =
     activeHolders > 0
@@ -38,6 +41,7 @@ app.get("/api/holders", async () => {
     source: runtime.snapshot.source,
     fetchedAtUnix: runtime.snapshot.fetchedAtUnix,
     error: runtime.snapshot.error,
+    tokenMint: runtime.tokenMint || null,
     stats: {
       activeHolders,
       avgHoldDays,
