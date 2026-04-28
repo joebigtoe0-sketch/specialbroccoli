@@ -14,6 +14,7 @@ const DEFAULT_STATS = {
   avgHoldDays: 0,
   activeHolders: INITIAL_HOLDERS.length,
   nextDistributionUnix: Math.ceil(Math.floor(Date.now() / 1000) / 1800) * 1800,
+  cyclePending: 0,
 };
 function buildBuyUrl(tokenMint) {
   if (!tokenMint) return 'https://app.printr.money/trade/';
@@ -188,14 +189,14 @@ function Nav({ onNav, buyUrl }) {
 }
 
 /* ---------- hero ---------- */
-function Hero({ onNav, buyUrl }) {
+function Hero({ onNav, buyUrl, cyclePending }) {
   return (
     <section style={{ position:'relative', paddingTop:48, paddingBottom:64 }}>
       <div className="hero-glow" />
       <div className="container" style={{
         display:'grid',
-        gridTemplateColumns:'1.05fr 0.95fr',
-        gap:48,
+        gridTemplateColumns:'repeat(auto-fit, minmax(300px, 1fr))',
+        gap:32,
         alignItems:'center',
       }}>
         <div className="fade-up in" style={{ position:'relative', zIndex:2 }}>
@@ -221,7 +222,7 @@ function Hero({ onNav, buyUrl }) {
           <div style={{ display:'flex', gap:20, flexWrap:'wrap', marginTop:36 }}>
             <span className="pill"><span style={{color:'var(--win)'}}>●</span> CONTRACT VERIFIED</span>
             <span className="pill"><span style={{color:'var(--ice-300)'}}>◆</span> POOL LIVE</span>
-            <span className="pill"><span style={{color:'var(--prism-yellow)'}}>★</span> CYCLE 14 PENDING</span>
+            <span className="pill"><span style={{color:'var(--prism-yellow)'}}>★</span> CYCLE {cyclePending} PENDING</span>
           </div>
         </div>
 
@@ -525,7 +526,7 @@ function Mechanic() {
         <div style={{
           marginTop:32,
           display:'grid',
-          gridTemplateColumns:'repeat(auto-fit, minmax(420px, 1fr))',
+          gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))',
           gap:18,
         }}>
           {STEP_CODE.map(s => (
@@ -748,8 +749,8 @@ function Footer({ buyUrl }) {
     <footer style={{ borderTop:'1px solid var(--ink-700)', padding:'48px 0 36px', marginTop:24 }}>
       <div className="container" style={{
         display:'grid',
-        gridTemplateColumns:'1.4fr 1fr 1fr',
-        gap:32,
+        gridTemplateColumns:'repeat(auto-fit, minmax(240px, 1fr))',
+        gap:24,
       }}>
         <div>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -824,6 +825,7 @@ function App() {
           avgHoldDays: Number(data.stats.avgHoldDays || 0),
           activeHolders: Number(data.stats.activeHolders || data.items?.length || 0),
           nextDistributionUnix: Number(data.stats.nextDistributionUnix || DEFAULT_STATS.nextDistributionUnix),
+          cyclePending: Number(data.stats.cyclePending || 0),
         });
       } catch (e) {
         // Keep the bundled mock set on network/API failure.
@@ -849,7 +851,7 @@ function App() {
   return (
     <div id="top" style={{ position:'relative', zIndex:1 }}>
       <Nav onNav={onNav} buyUrl={buyUrl} />
-      <Hero onNav={onNav} buyUrl={buyUrl} />
+      <Hero onNav={onNav} buyUrl={buyUrl} cyclePending={stats.cyclePending} />
       <StatsBar stats={stats} />
       <ThreeSteps />
       <hr className="divider" />

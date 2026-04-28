@@ -36,6 +36,7 @@ export async function runHolderFetch(): Promise<void> {
 export async function startPoller(): Promise<void> {
   if (runtime.pollRunning) return;
   runtime.pollRunning = true;
+  runtime.cycleStartedAtUnix = Math.floor(Date.now() / 1000);
   await runHolderFetch();
   runtime.pollInterval = setInterval(() => {
     void runHolderFetch();
@@ -44,6 +45,7 @@ export async function startPoller(): Promise<void> {
 
 export function stopPoller(): void {
   runtime.pollRunning = false;
+  runtime.cycleStartedAtUnix = null;
   if (runtime.pollInterval) {
     clearInterval(runtime.pollInterval);
     runtime.pollInterval = null;

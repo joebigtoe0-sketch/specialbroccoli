@@ -14,4 +14,5 @@ export const runtime = {
   lastAttemptUnix: null as number | null,
   lastSuccessUnix: null as number | null,
   blacklistAddresses: [] as string[],
+  cycleStartedAtUnix: null as number | null,
 };

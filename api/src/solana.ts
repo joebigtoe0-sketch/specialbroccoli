@@ -172,14 +172,13 @@ export async function fetchChainHolders(mint: string): Promise<HolderRow[]> {
   const ranked = items
     .map((item) => {
       const weightPpm = totalWeight > 0n ? Number((item.weight * 1_000_000n) / totalWeight) : 0;
-      const earnedSol = Number((BigInt(weightPpm) * 1000000000n) / 1_000_000n) / 1_000_000000;
       return {
         rank: 0,
         address: item.address,
         heldTokens: Number(item.amount),
         heldSinceUnix: item.heldSinceUnix,
         weightPpm,
-        earnedSol,
+        earnedSol: 0,
       };
     })
     .sort((a, b) => b.weightPpm - a.weightPpm)

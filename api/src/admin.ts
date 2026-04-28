@@ -60,6 +60,7 @@ export async function registerAdminRoutes(app: FastifyInstance): Promise<void> {
       source: runtime.snapshot.source,
       holdersCount: runtime.snapshot.items.length,
       blacklistAddresses: runtime.blacklistAddresses,
+      cycleStartedAtUnix: runtime.cycleStartedAtUnix,
     };
   });
 

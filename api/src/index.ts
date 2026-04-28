@@ -23,6 +23,7 @@ app.get("/api/status", async () => ({
   lastSuccessUnix: runtime.lastSuccessUnix,
   lastError: runtime.snapshot.error,
   holdersCount: runtime.snapshot.items.length,
+  cycleStartedAtUnix: runtime.cycleStartedAtUnix,
 }));
 
 app.get("/api/holders", async () => {
@@ -36,7 +37,11 @@ app.get("/api/holders", async () => {
     activeHolders > 0
       ? items.reduce((sum, row) => sum + Math.max(0, now - row.heldSinceUnix), 0) / activeHolders / 86400
       : 0;
-  const nextDistributionUnix = Math.ceil(now / 1800) * 1800;
+  const cycleStarted = runtime.cycleStartedAtUnix;
+  const cyclePending =
+    cycleStarted && runtime.pollRunning ? Math.floor((now - cycleStarted) / 1800) + 1 : 0;
+  const nextDistributionUnix =
+    cycleStarted && runtime.pollRunning ? cycleStarted + cyclePending * 1800 : Math.ceil(now / 1800) * 1800;
   return {
     source: runtime.snapshot.source,
     fetchedAtUnix: runtime.snapshot.fetchedAtUnix,
@@ -47,6 +52,7 @@ app.get("/api/holders", async () => {
       avgHoldDays,
       totalDistributedSol: 0,
       nextDistributionUnix,
+      cyclePending,
     },
     items,
   };
